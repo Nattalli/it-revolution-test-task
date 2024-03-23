@@ -1,5 +1,5 @@
 import pyshorteners
-from django.db.models import Count
+from django.db.models import Count, F
 from django.db.models.functions import ExtractHour
 from rest_framework import generics
 from rest_framework.response import Response
@@ -9,7 +9,8 @@ from .serializers import (
     CreateLinkSerializer,
     CreateLinkClickSerializer,
     LinkStatisticByDaySerializer,
-    LinkStatisticByTimeOfDaySerializer
+    LinkStatisticByTimeOfDaySerializer,
+    TopTenLinksSerializer
 )
 
 
@@ -76,3 +77,13 @@ class LinkStatisticByTimeOfDayView(generics.RetrieveAPIView):
             click_count_by_hour[hour_truncated] = click_count
 
         return Response(click_count_by_hour)
+
+
+class TopTenLinksView(generics.ListAPIView):
+    serializer_class = TopTenLinksSerializer
+
+    def get_queryset(self):
+        return Link.objects.annotate(
+            click_count=Count('linkclick'),
+            creation_date=F('created_at')
+        ).order_by('-click_count')[:10]
