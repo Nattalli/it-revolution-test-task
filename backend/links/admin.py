@@ -1,5 +1,5 @@
 from django.contrib import admin
-from models import Link, LinkClick
+from .models import Link, LinkClick
 
 
 admin.site.register(Link)
