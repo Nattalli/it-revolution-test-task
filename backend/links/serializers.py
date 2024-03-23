@@ -16,3 +16,11 @@ class CreateLinkClickSerializer(serializers.ModelSerializer):
     class Meta:
         model = LinkClick
         fields = ('link',)
+
+
+class LinkStatisticsSerializer(serializers.ModelSerializer):
+    click_count = serializers.IntegerField()
+
+    class Meta:
+        model = Link
+        fields = ('full_link', 'short_link', 'title', 'click_count')

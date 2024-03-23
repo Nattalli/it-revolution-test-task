@@ -1,8 +1,9 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from .models import Link
-from .serializers import CreateLinkSerializer, CreateLinkClickSerializer
+from .models import Link, LinkClick
+from .serializers import CreateLinkSerializer, CreateLinkClickSerializer, LinkStatisticsSerializer
 import pyshorteners
+from django.db.models import Count
 
 
 class CreateShortenLinkView(generics.CreateAPIView):
@@ -24,3 +25,22 @@ class CreateShortenLinkView(generics.CreateAPIView):
 
 class CreateLinkClickView(generics.CreateAPIView):
     serializer_class = CreateLinkClickSerializer
+
+
+class LinkStatisticsView(generics.RetrieveAPIView):
+    serializer_class = LinkStatisticsSerializer
+
+    def get_queryset(self):
+        return Link.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        link = self.get_object()
+        click_statistics = LinkClick.objects.filter(link=link).values('clicked_at__date').annotate(
+            click_count=Count('id')
+        )
+
+        statistics_by_day = {}
+        for entry in click_statistics:
+            statistics_by_day[str(entry['clicked_at__date'])] = entry['click_count']
+
+        return Response(statistics_by_day)
