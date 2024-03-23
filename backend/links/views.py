@@ -1,9 +1,16 @@
-from rest_framework import generics
-from rest_framework.response import Response
-from .models import Link, LinkClick
-from .serializers import CreateLinkSerializer, CreateLinkClickSerializer, LinkStatisticsSerializer
 import pyshorteners
 from django.db.models import Count
+from django.db.models.functions import ExtractHour
+from rest_framework import generics
+from rest_framework.response import Response
+
+from .models import Link, LinkClick
+from .serializers import (
+    CreateLinkSerializer,
+    CreateLinkClickSerializer,
+    LinkStatisticByDaySerializer,
+    LinkStatisticByTimeOfDaySerializer
+)
 
 
 class CreateShortenLinkView(generics.CreateAPIView):
@@ -27,8 +34,8 @@ class CreateLinkClickView(generics.CreateAPIView):
     serializer_class = CreateLinkClickSerializer
 
 
-class LinkStatisticsView(generics.RetrieveAPIView):
-    serializer_class = LinkStatisticsSerializer
+class LinkStatisticByDaysView(generics.RetrieveAPIView):
+    serializer_class = LinkStatisticByDaySerializer
 
     def get_queryset(self):
         return Link.objects.all()
@@ -44,3 +51,28 @@ class LinkStatisticsView(generics.RetrieveAPIView):
             statistics_by_day[str(entry['clicked_at__date'])] = entry['click_count']
 
         return Response(statistics_by_day)
+
+
+class LinkStatisticByTimeOfDayView(generics.RetrieveAPIView):
+    serializer_class = LinkStatisticByTimeOfDaySerializer
+
+    def get_queryset(self):
+        return Link.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        link = self.get_object()
+
+        click_statistics = LinkClick.objects.filter(link=link).annotate(
+            hour_truncated=ExtractHour('clicked_at')
+        ).values('hour_truncated').annotate(
+            click_count=Count('id')
+        )
+
+        click_count_by_hour = {hour: 0 for hour in range(24)}
+
+        for entry in click_statistics:
+            hour_truncated = entry['hour_truncated']
+            click_count = entry['click_count']
+            click_count_by_hour[hour_truncated] = click_count
+
+        return Response(click_count_by_hour)

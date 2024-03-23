@@ -18,9 +18,14 @@ class CreateLinkClickSerializer(serializers.ModelSerializer):
         fields = ('link',)
 
 
-class LinkStatisticsSerializer(serializers.ModelSerializer):
+class LinkStatisticByDaySerializer(serializers.ModelSerializer):
     click_count = serializers.IntegerField()
 
     class Meta:
         model = Link
         fields = ('full_link', 'short_link', 'title', 'click_count')
+
+
+class LinkStatisticByTimeOfDaySerializer(serializers.Serializer):
+    hour = serializers.IntegerField()
+    click_count = serializers.IntegerField()
