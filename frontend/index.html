@@ -31,8 +31,10 @@
 
     .sidebar {
       width: 25%;
+      border-radius: 10px;
       background-color: #f0f0f0;
       padding: 20px;
+      margin-top: 20px;
     }
 
     .content {
@@ -84,20 +86,70 @@
       border-radius: 20%;
       font-size: 12px;
     }
+
+    .form-container {
+      background-color: #f0f0f0;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .form-input {
+      width: calc(100% - 16px);
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .form-button {
+      background-color: #1287A8;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .form-button[disabled] {
+      background-color: #b2b2b2;
+      cursor: not-allowed;
+      color: #666;
+    }
+    .success-block {
+      border: 2px solid #449d45;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .error-block {
+      border: 2px solid #ce4a2b;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <header>
-      <h1>Shorten Link</h1>
+      <h1 style="margin: 0;">Shorten Link</h1>
     </header>
     <div class="main">
       <div class="sidebar">
-        <h2>Most popular links</h2>
+        <h2 style="margin-top: 0;">Most popular links</h2>
         <div class="popular-links">
           <div v-for="(link, index) in popularLinks" :key="index" class="link-item" @click="openLink(link.short_link)">
             <div class="rank-badge">{{ index + 1 }}</div>
-            <div class="link-title">{{ link.title || 'Untitled' }}</div>
+            <div class="link-title">{{ link.title ? link.title : 'No title' }}</div>
             <div><strong>Short Link:</strong> <a :href="link.short_link" target="_blank" class="link-url">{{ link.short_link }}</a></div>
             <div class="link-meta"><strong>Click Count:</strong> {{ link.click_count }}</div>
             <div class="link-meta"><strong>Creation Date:</strong> {{ formatDate(link.creation_date) }}</div>
@@ -105,7 +157,26 @@
         </div>
       </div>
       <div class="content">
-        <p>{{ dynamicContent }}</p>
+        <div class="form-container">
+          <h2>Create new shorten link:</h2>
+          <div class="form-group">
+            <label for="full-link" class="form-label">Full link*:</label>
+            <input type="text" id="full-link" class="form-input" v-model="fullLink" :class="{ 'error': !fullLink }">
+          </div>
+          <div class="form-group">
+            <label for="title" class="form-label">Title:</label>
+            <input type="text" id="title" class="form-input" v-model="title">
+          </div>
+          <button class="form-button" :disabled="!fullLink" @click="createShortLink">Create</button>
+          <div v-if="shortLinkSuccess" class="success-block">
+            Shorten link is successfully created: <br>
+            <a :href="shortLink" target="_blank" class="short-link" @click="openLinkInNewTab">{{ shortLink }}</a><br>
+            <button @click="copyToClipboard">Copy to Clipboard</button>
+          </div>
+          <div v-if="shortLinkError" class="error-block">
+            {{ shortLinkError }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -115,15 +186,15 @@
     const app = Vue.createApp({
       data() {
         return {
-          searchQuery: '',
-          dynamicContent: "Привіт! Вітаємо на нашому сайті",
-          popularLinks: []
+          fullLink: '',
+          title: '',
+          popularLinks: [],
+          shortLinkSuccess: false,
+          shortLinkError: '',
+          shortLink: ''
         };
       },
       methods: {
-        async handleSearch() {
-          console.log('Пошуковий запит:', this.searchQuery);
-        },
         async fetchPopularLinks() {
           try {
             const response = await fetch('http://127.0.0.1:8000/api/top-ten-links/');
@@ -133,13 +204,53 @@
             console.error('Error:', error);
           }
         },
+        async createShortLink() {
+          if (!this.fullLink) return;
+          try {
+            const response = await fetch('http://127.0.0.1:8000/api/create-shorten-link/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                full_link: this.fullLink,
+                title: this.title
+              })
+            });
+            const data = await response.json();
+            console.log('Response:', data);
+            if (data.short_link) {
+              this.shortLinkSuccess = true;
+              this.shortLinkError = '';
+              this.shortLink = data.short_link;
+            } else {
+              this.shortLinkError = data.full_link[0];
+              this.shortLinkSuccess = false;
+              const lastWordIndex = data.full_link[0].lastIndexOf('/');
+              this.shortLink = data.full_link[0].substring(lastWordIndex + 1);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        },
         openLink(url) {
+          window.open(url, '_blank');
+        },
+        openLinkInNewTab(url) {
           window.open(url, '_blank');
         },
         formatDate(dateString) {
           const date = new Date(dateString);
           const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
           return date.toLocaleDateString('en-US', options);
+        },
+        copyToClipboard() {
+          const el = document.createElement('textarea');
+          el.value = this.shortLink;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
         }
       },
       mounted() {
