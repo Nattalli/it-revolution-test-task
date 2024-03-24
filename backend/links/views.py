@@ -2,6 +2,7 @@ import pyshorteners
 from django.db.models import Count, F
 from django.db.models.functions import ExtractHour
 from rest_framework import generics
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .models import Link, LinkClick
@@ -25,7 +26,15 @@ class CreateShortenLinkView(generics.CreateAPIView):
         short_link = shortener.tinyurl.short(full_link)
 
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as e:
+            response_data = {
+                'error_message': e.detail,
+                'short_link': short_link,
+                'link_id': Link.objects.filter(short_link=short_link).first().id
+            }
+            return Response(response_data, status=400)
 
         Link.objects.create(full_link=full_link, short_link=short_link, title=title)
 
