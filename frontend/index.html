@@ -1,13 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shorten Link</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+  <style>
+    html, body, input {
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #1287A8;
+      color: white;
+      padding: 20px 50px;
+    }
+
+    .search-box {
+      width: 30%;
+      display: flex;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 10px;
+    }
+
+    .main {
+      display: flex;
+    }
+
+    .sidebar {
+      width: 25%;
+      background-color: #f0f0f0;
+      padding: 20px;
+    }
+
+    .content {
+      flex-grow: 1;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Shorten Link</h1>
+      <div class="search-box">
+        <input type="text" v-model="searchQuery" @input="handleSearch" placeholder="Search...">
+      </div>
+    </header>
+    <div class="main">
+      <div class="sidebar">
+
+      </div>
+      <div class="content">
+        <p>{{ dynamicContent }}</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          searchQuery: '',
+          dynamicContent: "Привіт! Вітаємо на нашому сайті"
+        };
+      },
+      methods: {
+        handleSearch() {
+          console.log('Пошуковий запит:', this.searchQuery);
+        }
+      }
+    });
+
+    app.mount('#app');
+  </script>
+</body>
 </html>
