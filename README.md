@@ -16,7 +16,7 @@ In today's social media landscape, the need to share links is ubiquitous. Howeve
 
 5. Transparent Collaboration: project code hosted on GitHub for transparency and collaboration.
 
-Functionality:
+### Functionality:
 
 - Link Management: efficient storage and redirection of shortened and original links.
   
