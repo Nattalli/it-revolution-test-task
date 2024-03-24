@@ -147,10 +147,10 @@
       <div class="sidebar">
         <h2 style="margin-top: 0;">Most popular links</h2>
         <div class="popular-links">
-          <div v-for="(link, index) in popularLinks" :key="index" class="link-item" @click="openLink(link.short_link)">
+          <div v-for="(link, index) in popularLinks" :key="index" class="link-item">
             <div class="rank-badge">{{ index + 1 }}</div>
             <div class="link-title">{{ link.title ? link.title : 'No title' }}</div>
-            <div><strong>Short Link:</strong> <a :href="link.short_link" target="_blank" class="link-url">{{ link.short_link }}</a></div>
+            <div><strong>Short Link:</strong> <a :href="link.short_link" target="_blank" class="link-url" :data-link-id="link.id">{{ link.short_link }}</a></div>
             <div class="link-meta"><strong>Click Count:</strong> {{ link.click_count }}</div>
             <div class="link-meta"><strong>Creation Date:</strong> {{ formatDate(link.creation_date) }}</div>
           </div>
@@ -249,6 +249,22 @@
             console.error('Error:', error);
           }
         },
+        async postLinkClick(linkId) {
+          try {
+            const response = await fetch('http://127.0.0.1:8000/api/create-link-click/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                link: linkId
+              })
+            });
+            console.log('Link click recorded:', response);
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        },
         renderCharts() {
           this.renderClicksByDaysChart();
           this.renderClicksByTimeChart();
@@ -327,6 +343,16 @@
       },
       mounted() {
         this.fetchPopularLinks();
+        document.addEventListener('click', (event) => {
+            if (event.target.tagName === 'A' && event.target.closest('.sidebar')) {
+                console.log(1, event.target.dataset)
+                const linkId = event.target.dataset.linkId;
+                console.log("id", linkId)
+                if (linkId) {
+                    this.postLinkClick(linkId);
+                }
+            }
+        });
       }
     });
     app.mount('#app');
