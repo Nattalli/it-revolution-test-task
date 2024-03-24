@@ -173,15 +173,22 @@
             <a :href="shortLink" target="_blank" class="short-link" @click="openLinkInNewTab">{{ shortLink }}</a><br>
             <button @click="copyToClipboard">Copy to Clipboard</button>
           </div>
-          <div v-if="shortLinkError" class="error-block">
+          <div v-if="shortLinkError !== '' || shortLink !== ''" class="error-block">
             {{ shortLinkError }}
+            <a :href="shortLink" target="_blank" class="short-link" @click="openLinkInNewTab">{{ shortLink }}</a><br>
+            <button @click="copyToClipboard">Copy to Clipboard</button>
           </div>
+        </div>
+        <div>
+          <canvas id="clicks-by-days-chart" width="400" height="200"></canvas>
+          <canvas id="clicks-by-time-chart" width="400" height="200"></canvas>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
   <script>
     const app = Vue.createApp({
       data() {
@@ -191,7 +198,10 @@
           popularLinks: [],
           shortLinkSuccess: false,
           shortLinkError: '',
-          shortLink: ''
+          shortLink: '',
+          linkId: null,
+          statisticsByDays: {},
+          statisticsByTime: {}
         };
       },
       methods: {
@@ -205,7 +215,6 @@
           }
         },
         async createShortLink() {
-          if (!this.fullLink) return;
           try {
             const response = await fetch('http://127.0.0.1:8000/api/create-shorten-link/', {
               method: 'POST',
@@ -218,20 +227,83 @@
               })
             });
             const data = await response.json();
-            console.log('Response:', data);
-            if (data.short_link) {
+            if (!data.error_message) {
               this.shortLinkSuccess = true;
               this.shortLinkError = '';
               this.shortLink = data.short_link;
+              this.linkId = data.id;
             } else {
-              this.shortLinkError = data.full_link[0];
+              this.shortLinkError = data.error_message.full_link[0];
               this.shortLinkSuccess = false;
-              const lastWordIndex = data.full_link[0].lastIndexOf('/');
-              this.shortLink = data.full_link[0].substring(lastWordIndex + 1);
+              this.shortLink = data.short_link;
+              this.linkId = data.link_id;
+              const [statisticsByDaysResponse, statisticsByTimeResponse] = await Promise.all([
+                fetch(`http://127.0.0.1:8000/api/link-statistics-by-days/${this.linkId}/`),
+                fetch(`http://127.0.0.1:8000/api/link-statistics-by-time-of-the-day/${this.linkId}/`)
+              ]);
+              this.statisticsByDays = await statisticsByDaysResponse.json();
+              this.statisticsByTime = await statisticsByTimeResponse.json();
+              this.renderCharts();
             }
           } catch (error) {
             console.error('Error:', error);
           }
+        },
+        renderCharts() {
+          this.renderClicksByDaysChart();
+          this.renderClicksByTimeChart();
+        },
+        renderClicksByDaysChart() {
+          const days = Object.keys(this.statisticsByDays);
+          const clicks = Object.values(this.statisticsByDays);
+
+          const ctx = document.getElementById('clicks-by-days-chart').getContext('2d');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: days,
+              datasets: [{
+                label: 'Clicks by Days',
+                data: clicks,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+        },
+        renderClicksByTimeChart() {
+          const hours = Object.keys(this.statisticsByTime);
+          const clicks = Object.values(this.statisticsByTime);
+
+          const ctx = document.getElementById('clicks-by-time-chart').getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: hours,
+              datasets: [{
+                label: 'Clicks by Time',
+                data: clicks,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
         },
         openLink(url) {
           window.open(url, '_blank');

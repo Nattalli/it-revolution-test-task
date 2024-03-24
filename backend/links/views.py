@@ -36,10 +36,11 @@ class CreateShortenLinkView(generics.CreateAPIView):
             }
             return Response(response_data, status=400)
 
-        Link.objects.create(full_link=full_link, short_link=short_link, title=title)
+        link = Link.objects.create(full_link=full_link, short_link=short_link, title=title)
 
         response_data = serializer.data
         response_data['short_link'] = short_link
+        response_data['id'] = link.id
 
         return Response(response_data)
 

@@ -37,4 +37,4 @@ class TopTenLinksSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Link
-        fields = ('full_link', 'short_link', 'title', 'click_count', 'creation_date')
+        fields = ('full_link', 'short_link', 'title', 'click_count', 'creation_date', 'id')
