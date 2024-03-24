@@ -207,7 +207,7 @@
       methods: {
         async fetchPopularLinks() {
           try {
-            const response = await fetch('http://127.0.0.1:8000/api/top-ten-links/');
+            const response = await fetch('http://0.0.0.0:8000/api/top-ten-links/');
             const data = await response.json();
             this.popularLinks = data;
           } catch (error) {
@@ -216,7 +216,7 @@
         },
         async createShortLink() {
           try {
-            const response = await fetch('http://127.0.0.1:8000/api/create-shorten-link/', {
+            const response = await fetch('http://0.0.0.0:8000/api/create-shorten-link/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -238,8 +238,8 @@
               this.shortLink = data.short_link;
               this.linkId = data.link_id;
               const [statisticsByDaysResponse, statisticsByTimeResponse] = await Promise.all([
-                fetch(`http://127.0.0.1:8000/api/link-statistics-by-days/${this.linkId}/`),
-                fetch(`http://127.0.0.1:8000/api/link-statistics-by-time-of-the-day/${this.linkId}/`)
+                fetch(`http://0.0.0.0:8000/api/link-statistics-by-days/${this.linkId}/`),
+                fetch(`http://0.0.0.0:8000/api/link-statistics-by-time-of-the-day/${this.linkId}/`)
               ]);
               this.statisticsByDays = await statisticsByDaysResponse.json();
               this.statisticsByTime = await statisticsByTimeResponse.json();
@@ -251,7 +251,7 @@
         },
         async postLinkClick(linkId) {
           try {
-            const response = await fetch('http://127.0.0.1:8000/api/create-link-click/', {
+            const response = await fetch('http://0.0.0.0:8000/api/create-link-click/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
