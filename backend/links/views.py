@@ -28,7 +28,11 @@ class CreateShortenLinkView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         Link.objects.create(full_link=full_link, short_link=short_link, title=title)
-        return Response(serializer.data)
+
+        response_data = serializer.data
+        response_data['short_link'] = short_link
+
+        return Response(response_data)
 
 
 class CreateLinkClickView(generics.CreateAPIView):
